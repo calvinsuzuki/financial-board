@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Financeiro</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Auth Screen (adapts between setup / login) -->
+<div id="screen-auth" class="screen-center">
+  <div class="lock-box">
+    <div class="lock-icon" id="auth-icon">&#128274;</div>
+    <h1>Dashboard Financeiro</h1>
+    <p id="auth-desc">Carregando...</p>
+    <p id="auth-status" style="font-size:11px;margin-bottom:16px;"></p>
+
+    <!-- Login mode -->
+    <div id="auth-login" style="display:none;">
+      <div class="input-group">
+        <input type="password" id="login-pw" placeholder="Senha" autocomplete="current-password">
+      </div>
+      <div class="error-msg" id="login-err">Senha incorreta</div>
+      <button class="btn btn-primary" id="login-btn" onclick="doLogin()">Desbloquear</button>
+    </div>
+
+    <!-- Setup mode -->
+    <div id="auth-setup" style="display:none;">
+      <div class="input-group">
+        <label>Senha</label>
+        <input type="password" id="setup-pw" placeholder="Escolha uma senha forte" autocomplete="new-password">
+      </div>
+      <div class="input-group">
+        <label>Confirmar senha</label>
+        <input type="password" id="setup-pw2" placeholder="Confirme a senha" autocomplete="new-password">
+      </div>
+      <div class="error-msg" id="setup-err"></div>
+      <button class="btn btn-primary" onclick="doSetup()">Criar Dashboard</button>
+    </div>
+
+    <!-- Import (always visible) -->
+    <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border);">
+      <label class="btn btn-sm" style="width:100%;display:block;cursor:pointer;text-align:center;" id="import-label">
+        Importar data.js
+        <input type="file" accept=".js,.json" style="display:none;" onchange="importDataFile(this)">
+      </label>
+    </div>
+  </div>
+</div>
+
+<!-- Dashboard -->
+<div id="dashboard" class="screen">
+  <div class="header">
+    <h1>Dashboard Financeiro</h1>
+    <div class="header-actions">
+      <button class="btn-sm accent" onclick="openAddMonth()">+ Novo M&ecirc;s</button>
+      <button class="btn-sm" onclick="openExport()">Salvar Dados</button>
+      <button class="btn-sm" onclick="location.reload()">Sair</button>
+    </div>
+  </div>
+
+  <div class="summary-grid" id="summary-grid"></div>
+
+  <div class="cat-tabs" id="cat-tabs">
+    <button class="cat-tab active" data-cat="all" onclick="filterCat('all')">Todos</button>
+    <button class="cat-tab" data-cat="fixed" onclick="filterCat('fixed')">Renda Fixa</button>
+    <button class="cat-tab" data-cat="variable" onclick="filterCat('variable')">Renda Vari&aacute;vel</button>
+    <button class="cat-tab" data-cat="crypto" onclick="filterCat('crypto')">Crypto</button>
+  </div>
+
+  <div class="month-tabs" id="month-tabs"></div>
+
+  <div class="charts-grid" id="charts-area">
+    <div class="chart-card">
+      <h3>Evolu&ccedil;&atilde;o do Patrim&ocirc;nio</h3>
+      <canvas id="chart-evolution"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3 id="chart-dist-title">Distribui&ccedil;&atilde;o por Corretora</h3>
+      <canvas id="chart-brokers"></canvas>
+    </div>
+  </div>
+
+  <div id="detail-area"></div>
+
+  <div class="table-card" id="table-area">
+    <h3>Compara&ccedil;&atilde;o Mensal</h3>
+    <div id="comparison-table"></div>
+  </div>
+
+  <div id="empty-state" class="empty-state" style="display:none;">
+    <div class="icon">&#128200;</div>
+    <h3>Nenhum dado ainda</h3>
+    <p>Clique em "+ Novo M&ecirc;s" para adicionar seu primeiro registro.</p>
+    <button class="btn-sm accent" onclick="openAddMonth()" style="display:inline-block;width:auto;">+ Novo M&ecirc;s</button>
+  </div>
+
+  <div class="footer">AES-256-GCM &middot; Processado localmente no navegador</div>
+</div>
+
+<!-- Modal: Add/Edit Month -->
+<div class="modal-overlay" id="modal-month">
+  <div class="modal">
+    <h3 id="modal-month-title">Adicionar M&ecirc;s</h3>
+    <p>Preencha os dados do m&ecirc;s organizados por categoria.</p>
+
+    <div class="form-section">
+      <h4>Informa&ccedil;&otilde;es Gerais</h4>
+      <div class="form-row three">
+        <div class="input-group"><label>M&ecirc;s</label><select id="f-month"></select></div>
+        <div class="input-group"><label>Ano</label><input type="number" id="f-year" value="2026" min="2020" max="2040"></div>
+        <div class="input-group"><label>Data refer&ecirc;ncia</label><input type="text" id="f-date" placeholder="dd/mm/aaaa"></div>
+      </div>
+      <div class="form-row">
+        <div class="input-group"><label>Aporte do m&ecirc;s (R$)</label><input type="text" id="f-aporte" placeholder="1.500,00" oninput="recalcForm()"></div>
+        <div class="input-group" style="opacity:0.5;pointer-events:none;"></div>
+      </div>
+    </div>
+    <div class="auto-calc-bar" id="calc-bar" style="display:none;">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <span>Rendimento calculado: <strong id="calc-gain">R$ 0,00</strong></span>
+        <span>Acumulado: <strong id="calc-acc">R$ 0,00</strong></span>
+        <span>Retorno mensal: <strong id="calc-pct">0,00%</strong></span>
+        <span>Retorno anualizado: <strong id="calc-ann">0,00%</strong></span>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:4px;" id="calc-days"></div>
+    </div>
+
+    <div class="cat-form-header cat-fixed">
+      <span>Renda Fixa</span>
+      <button class="btn-sm" onclick="addBrokerSection('fixed')" style="border-color:var(--blue);color:var(--blue);">+ Corretora</button>
+    </div>
+    <div id="brokers-fixed"></div>
+
+    <div class="cat-form-header cat-variable">
+      <span>Renda Vari&aacute;vel</span>
+      <button class="btn-sm" onclick="addBrokerSection('variable')" style="border-color:var(--orange);color:var(--orange);">+ Corretora</button>
+    </div>
+    <div id="brokers-variable"></div>
+
+    <div class="cat-form-header cat-crypto">
+      <span>Crypto</span>
+      <button class="btn-sm" onclick="addBrokerSection('crypto')" style="border-color:var(--yellow);color:var(--yellow);">+ Exchange</button>
+    </div>
+    <div id="brokers-crypto"></div>
+
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="saveMonth()">Salvar</button>
+      <button class="btn" style="background:var(--card);border:1px solid var(--border);color:var(--text)" onclick="closeModal('modal-month')">Cancelar</button>
+    </div>
+    <div class="error-msg" id="month-err" style="text-align:center;"></div>
+  </div>
+</div>
+
+<!-- Modal: Export -->
+<div class="modal-overlay" id="modal-export">
+  <div class="modal" style="max-width:520px;">
+    <h3>Salvar Dados</h3>
+    <p>Seus dados s&atilde;o salvos automaticamente como <code>data.js</code> a cada altera&ccedil;&atilde;o. O arquivo cont&eacute;m apenas dados criptografados &mdash; ileg&iacute;veis sem a senha.</p>
+    <p style="font-size:13px;">O <code>index.html</code> nunca muda. Para atualizar o layout, basta substituir os arquivos <code>.html</code>, <code>.css</code>, <code>script.js</code> sem mexer no <code>data.js</code>.</p>
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;font-family:monospace;font-size:12px;color:var(--text-muted);margin-bottom:16px;word-break:break-all;max-height:100px;overflow:auto;" id="payload-preview"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="manualDownload()">Baixar data.js</button>
+      <button class="btn" style="background:var(--card);border:1px solid var(--border);color:var(--text)" onclick="closeModal('modal-export')">Fechar</button>
+    </div>
+    <div class="success-msg" id="export-ok" style="text-align:center;"></div>
+  </div>
+</div>
+
+<!-- Modal: Delete -->
+<div class="modal-overlay" id="modal-delete">
+  <div class="modal" style="max-width:420px;text-align:center;">
+    <h3>Excluir m&ecirc;s?</h3>
+    <p id="delete-msg"></p>
+    <div class="modal-actions">
+      <button class="btn btn-danger" onclick="confirmDelete()">Excluir</button>
+      <button class="btn" style="background:var(--card);border:1px solid var(--border);color:var(--text)" onclick="closeModal('modal-delete')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="data.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

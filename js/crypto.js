@@ -15,5 +15,7 @@ async function dec(b64, pw) {
   return new TextDecoder().decode(await crypto.subtle.decrypt({ name:"AES-GCM", iv:b.slice(16,28) }, k, b.slice(28)));
 }
 async function saveData() {
-  ENCRYPTED_PAYLOAD = await enc(JSON.stringify(appData), APP_PW);
+  if (APP_PW) {
+    ENCRYPTED_PAYLOAD = await enc(JSON.stringify(appData), APP_PW);
+  }
 }

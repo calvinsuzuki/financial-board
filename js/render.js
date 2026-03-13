@@ -19,7 +19,7 @@ function renderDashboard() {
   document.getElementById('empty-state').style.display='none';
   document.getElementById('charts-area').style.display='';
   document.getElementById('table-area').style.display='';
-  if(selMonth>=m.length) selMonth=m.length-1;
+  if(selMonth===0 || selMonth>=m.length) selMonth=m.length-1;
   renderSummary(); renderMonthTabs(); renderCharts(); renderDetail(); renderTable();
 }
 

@@ -8,43 +8,26 @@
 </head>
 <body>
 
-<!-- Auth Screen (adapts between setup / login) -->
+<!-- Auth Screen (only shown when data.js exists and needs decryption) -->
 <div id="screen-auth" class="screen-center">
   <div class="lock-box">
-    <div class="lock-icon" id="auth-icon">&#128274;</div>
+    <div class="lock-icon">&#128274;</div>
     <h1>Dashboard Financeiro</h1>
-    <p id="auth-desc">Carregando...</p>
+    <p id="auth-desc">Dados encontrados. Digite sua senha para acessar.</p>
     <p id="auth-status" style="font-size:11px;margin-bottom:16px;"></p>
 
-    <!-- Login mode -->
-    <div id="auth-login" style="display:none;">
-      <div class="input-group">
-        <input type="password" id="login-pw" placeholder="Senha" autocomplete="current-password">
-      </div>
-      <div class="error-msg" id="login-err">Senha incorreta</div>
-      <button class="btn btn-primary" id="login-btn" onclick="doLogin()">Desbloquear</button>
+    <div class="input-group">
+      <input type="password" id="login-pw" placeholder="Senha" autocomplete="current-password">
     </div>
+    <div class="error-msg" id="login-err">Senha incorreta</div>
+    <button class="btn btn-primary" id="login-btn" onclick="doLogin()">Desbloquear</button>
 
-    <!-- Setup mode -->
-    <div id="auth-setup" style="display:none;">
-      <div class="input-group">
-        <label>Senha</label>
-        <input type="password" id="setup-pw" placeholder="Escolha uma senha forte" autocomplete="new-password">
-      </div>
-      <div class="input-group">
-        <label>Confirmar senha</label>
-        <input type="password" id="setup-pw2" placeholder="Confirme a senha" autocomplete="new-password">
-      </div>
-      <div class="error-msg" id="setup-err"></div>
-      <button class="btn btn-primary" onclick="doSetup()">Criar Dashboard</button>
-    </div>
-
-    <!-- Import (always visible) -->
     <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border);">
-      <label class="btn btn-sm" style="width:100%;display:block;cursor:pointer;text-align:center;" id="import-label">
-        Importar data.js
+      <label class="btn btn-sm" style="width:100%;display:block;cursor:pointer;text-align:center;">
+        Carregar outro data.js
         <input type="file" accept=".js,.json" style="display:none;" onchange="importDataFile(this)">
       </label>
+      <button class="btn btn-sm" style="width:100%;margin-top:8px;color:var(--accent-light);border-color:var(--accent-light);border-style:dashed;" onclick="startFresh()">Criar novo dashboard (ignorar dados)</button>
     </div>
   </div>
 </div>
@@ -142,11 +125,20 @@
 <div class="modal-overlay" id="modal-export">
   <div class="modal" style="max-width:520px;">
     <h3>Salvar Dados</h3>
-    <p>Seus dados s&atilde;o salvos automaticamente como <code>data.js</code> a cada altera&ccedil;&atilde;o. O arquivo cont&eacute;m apenas dados criptografados &mdash; ileg&iacute;veis sem a senha.</p>
-    <p style="font-size:13px;">O <code>index.html</code> nunca muda. Para atualizar o layout, basta substituir os arquivos <code>.html</code>, <code>.css</code>, <code>script.js</code> sem mexer no <code>data.js</code>.</p>
+    <p>Defina uma senha para criptografar seus dados. Voc&ecirc; pode usar uma senha diferente a cada vez.</p>
+    <p style="font-size:13px;">O arquivo <code>data.js</code> cont&eacute;m apenas dados criptografados (AES-256-GCM) &mdash; ileg&iacute;veis sem a senha.</p>
+    <div class="input-group" style="margin-bottom:8px;">
+      <label>Senha</label>
+      <input type="password" id="export-pw" placeholder="Senha para criptografia" autocomplete="new-password">
+    </div>
+    <div class="input-group" style="margin-bottom:16px;">
+      <label>Confirmar senha</label>
+      <input type="password" id="export-pw2" placeholder="Confirme a senha" autocomplete="new-password">
+    </div>
+    <div class="error-msg" id="export-err"></div>
     <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;font-family:monospace;font-size:12px;color:var(--text-muted);margin-bottom:16px;word-break:break-all;max-height:100px;overflow:auto;" id="payload-preview"></div>
     <div class="modal-actions">
-      <button class="btn btn-primary" onclick="manualDownload()">Baixar data.js</button>
+      <button class="btn btn-primary" onclick="manualDownload()">Criptografar e Baixar</button>
       <button class="btn" style="background:var(--card);border:1px solid var(--border);color:var(--text)" onclick="closeModal('modal-export')">Fechar</button>
     </div>
     <div class="success-msg" id="export-ok" style="text-align:center;"></div>

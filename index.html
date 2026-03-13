@@ -111,7 +111,10 @@
     </div>
 
     <div id="brokers-all"></div>
-    <button class="add-inv-btn" onclick="addBrokerSection()" style="margin-bottom:16px;">+ Corretora / Exchange</button>
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button class="add-inv-btn" onclick="addBrokerSection()" style="margin-bottom:0;flex:1;">+ Corretora / Exchange</button>
+      <button class="add-inv-btn" id="fetch-prices-btn" onclick="doFetchPrices()" style="margin-bottom:0;flex:1;color:var(--green);border-color:var(--green);">&#x21BB; Buscar cota&ccedil;&otilde;es atuais</button>
+    </div>
 
     <div class="modal-actions">
       <button class="btn btn-primary" onclick="saveMonth()">Salvar</button>
@@ -164,6 +167,7 @@
 <script src="js/helpers.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/forms.js"></script>
+<script src="js/fetch-prices.js"></script>
 <script src="js/render.js"></script>
 <script>init();</script>
 </body>

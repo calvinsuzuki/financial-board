@@ -201,7 +201,7 @@ function renderDetail() {
         html += `<div class="investment-row">
           <div>
             <div class="inv-name">${inv.name}${pi?`<span class="gain-badge ${invGain>=0?'pos':'neg'}">${fmtPct(invPct)}</span>`:''}</div>
-            <div class="inv-details">${inv.rate||''}${inv.maturity?' | Venc: '+inv.maturity:''}</div>
+            <div class="inv-details">${inv.ticker&&inv.quantity?inv.quantity+' \u00d7 '+(inv.priceUsd?fmtUsd(inv.priceUsd):fmtR(inv.value/inv.quantity))+'/un':''} ${inv.rate?'| '+inv.rate:''}${inv.maturity?' | Venc: '+inv.maturity:''}</div>
           </div>
           <div>
             <div class="inv-value">${fmtR(inv.value)}</div>

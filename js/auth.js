@@ -3,7 +3,7 @@ function getDummyData() {
     months: [
       {
         month: 0, year: 2026, date: '15/01/2026',
-        aporte: 1000, gain: 0, accGain: 0,
+        aporte: 0, gain: 0, accGain: 0,
         categories: {
           fixed: [
             { name: 'PicPay', total: 4200, investments: [
@@ -19,23 +19,23 @@ function getDummyData() {
           ],
           variable: [
             { name: 'XP', total: 5000, investments: [
-              { name: 'IVVB11', value: 2200, rate: '', maturity: '' },
-              { name: 'BOVA11', value: 1600, rate: '', maturity: '' },
-              { name: 'WEGE3', value: 1200, rate: '', maturity: '' }
+              { name: 'IVVB11', value: 2200, rate: '', maturity: '', ticker: 'IVVB11', quantity: 10 },
+              { name: 'BOVA11', value: 1600, rate: '', maturity: '', ticker: 'BOVA11', quantity: 12 },
+              { name: 'WEGE3', value: 1200, rate: '', maturity: '', ticker: 'WEGE3', quantity: 25 }
             ]}
           ],
           crypto: [
             { name: 'Binance', total: 5000, investments: [
-              { name: 'Bitcoin', value: 3000, rate: '', maturity: '' },
-              { name: 'Ethereum', value: 1400, rate: '', maturity: '' },
-              { name: 'Solana', value: 600, rate: '', maturity: '' }
+              { name: 'Bitcoin', value: 3000, rate: '', maturity: '', ticker: 'bitcoin', quantity: 0.005 },
+              { name: 'Ethereum', value: 1400, rate: '', maturity: '', ticker: 'ethereum', quantity: 0.08 },
+              { name: 'Solana', value: 600, rate: '', maturity: '', ticker: 'solana', quantity: 3.5 }
             ]}
           ]
         }
       },
       {
         month: 1, year: 2026, date: '15/02/2026',
-        aporte: 800, gain: -163, accGain: -163,
+        aporte: 0, gain: 637, accGain: 637,
         categories: {
           fixed: [
             { name: 'PicPay', total: 4247, investments: [
@@ -51,16 +51,16 @@ function getDummyData() {
           ],
           variable: [
             { name: 'XP', total: 5340, investments: [
-              { name: 'IVVB11', value: 2370, rate: '', maturity: '' },
-              { name: 'BOVA11', value: 1635, rate: '', maturity: '' },
-              { name: 'WEGE3', value: 1335, rate: '', maturity: '' }
+              { name: 'IVVB11', value: 2370, rate: '', maturity: '', ticker: 'IVVB11', quantity: 10 },
+              { name: 'BOVA11', value: 1635, rate: '', maturity: '', ticker: 'BOVA11', quantity: 12 },
+              { name: 'WEGE3', value: 1335, rate: '', maturity: '', ticker: 'WEGE3', quantity: 25 }
             ]}
           ],
           crypto: [
             { name: 'Binance', total: 5180, investments: [
-              { name: 'Bitcoin', value: 3125, rate: '', maturity: '' },
-              { name: 'Ethereum', value: 1455, rate: '', maturity: '' },
-              { name: 'Solana', value: 600, rate: '', maturity: '' }
+              { name: 'Bitcoin', value: 3125, rate: '', maturity: '', ticker: 'bitcoin', quantity: 0.005 },
+              { name: 'Ethereum', value: 1455, rate: '', maturity: '', ticker: 'ethereum', quantity: 0.08 },
+              { name: 'Solana', value: 600, rate: '', maturity: '', ticker: 'solana', quantity: 3.5 }
             ]}
           ]
         }

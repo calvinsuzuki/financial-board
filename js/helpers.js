@@ -2,6 +2,7 @@ function parseR(s) { if(!s) return 0; s=String(s).replace('R$','').replace(/\s/g
 function fmtR(v) { return 'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function fmtI(v) { if(!v&&v!==0) return ''; return Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function fmtPct(v) { return (v>=0?'+':'')+v.toFixed(2)+'%'; }
+function fmtUsd(v) { return '$ '+Number(v||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function showErr(el,m) { el.textContent=m; el.style.display='block'; }
 function hideErr(el) { el.style.display='none'; }
 function openModal(id) { document.getElementById(id).classList.add('show'); }

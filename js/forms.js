@@ -51,6 +51,7 @@ function openAddMonth() {
 
   autoFillDate();
   recalcForm();
+  updateAllTickerVisibility();
   openModal('modal-month');
 }
 
@@ -80,6 +81,7 @@ function openEditMonth(idx) {
     });
   });
   recalcForm();
+  updateAllTickerVisibility();
   openModal('modal-month');
 }
 
@@ -114,6 +116,22 @@ function pickCat(btn) {
   const wasActive = btn.classList.contains('active');
   pills.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
   if (!wasActive) btn.classList.add('active');
+  updateTickerVisibility(btn.closest('.form-section'));
+}
+
+function updateTickerVisibility(sec) {
+  var activeCat = sec.querySelector('.cat-pill.active');
+  var catId = activeCat ? activeCat.dataset.cat : '';
+  var show = (catId === 'crypto' || catId === 'variable');
+  sec.querySelectorAll('.ticker-row').forEach(function(row) {
+    row.style.display = show ? 'flex' : 'none';
+  });
+}
+
+function updateAllTickerVisibility() {
+  document.querySelectorAll('#brokers-all .form-section').forEach(function(sec) {
+    updateTickerVisibility(sec);
+  });
 }
 
 function calcBrokerTotal(sec) {
@@ -148,13 +166,19 @@ function addInvRow(container, d, prevValue) {
   }
 
   const uid = 'inv-' + Math.random().toString(36).slice(2,8);
+  const ticker = d?.ticker || '';
+  const qty = d?.quantity ? String(d.quantity).replace('.', ',') : '';
 
   wrapper.innerHTML = `
     <div class="inv-form-row">
       <div class="input-group"><label>Nome</label><input type="text" class="inv-name" value="${d?.name||''}" placeholder="CDB, LCI, A\u00e7\u00e3o..."></div>
-      <div class="input-group"><label>Valor (R$)</label><input type="text" class="inv-val" value="${d?fmtI(d.value):''}" placeholder="1.000,49" data-prev="${pv}" oninput="this.classList.remove('invalid');recalcForm()">
+      <div class="input-group"><label>Valor (R$)</label><input type="text" class="inv-val" value="${d?fmtI(d.value):''}" placeholder="1.000,49" data-prev="${pv}" ${d&&d.priceUsd?'data-price-usd="'+d.priceUsd+'"':''} oninput="this.classList.remove('invalid');recalcForm()">
         ${pv!==''?`<div class="prev-hint">Anterior: <span class="prev-val">${fmtR(pv)}</span></div>`:''}</div>
       <button class="btn-sm danger" onclick="this.closest('.inv-entry').remove();recalcForm();" style="margin-bottom:0;">&times;</button>
+    </div>
+    <div class="inv-form-row ticker-row" style="display:none;">
+      <div class="input-group" style="margin:0;"><label>Ticker</label><input type="text" class="inv-ticker" value="${ticker}" placeholder="bitcoin, IVVB11..." style="padding:7px 10px;font-size:12px;"></div>
+      <div class="input-group" style="margin:0;"><label>Quantidade</label><input type="text" class="inv-qty" value="${qty}" placeholder="0,5 / 50" style="padding:7px 10px;font-size:12px;"></div>
     </div>
     <div class="inv-form-extra">
       <div class="rate-pills" data-uid="${uid}">
@@ -320,7 +344,19 @@ async function saveMonth() {
       const rate = readInvRate(entry);
       const mat = entry.querySelector('.inv-mat');
       const maturity = mat && mat.value.trim() ? mat.value.trim() : 'Liq. Di\u00e1ria';
-      if (name || value) { investments.push({ name, value, rate, maturity }); bTotal += value; }
+      const tickerInput = entry.querySelector('.inv-ticker');
+      const qtyInput = entry.querySelector('.inv-qty');
+      const ticker = tickerInput ? tickerInput.value.trim() : '';
+      const quantity = qtyInput ? parseFloat(qtyInput.value.replace(',', '.')) || 0 : 0;
+      if (name || value) {
+        var inv = { name, value, rate, maturity };
+        if (ticker) inv.ticker = ticker;
+        if (quantity) inv.quantity = quantity;
+        var valEl = entry.querySelector('.inv-val');
+        if (valEl && valEl.dataset.priceUsd) inv.priceUsd = parseFloat(valEl.dataset.priceUsd);
+        investments.push(inv);
+        bTotal += value;
+      }
     });
     currentTotal += bTotal;
     categories[catId].push({ name: bName, total: bTotal, investments });

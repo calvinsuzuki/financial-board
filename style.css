@@ -231,14 +231,23 @@
   }
   .add-inv-btn:hover { border-color: var(--accent); color: var(--accent-light); }
 
-  .cat-form-header {
-    font-size: 16px; font-weight: 700; margin: 20px 0 12px;
-    padding: 10px 16px; border-radius: 8px; display: flex;
-    justify-content: space-between; align-items: center;
+  .cat-pills { display: flex; gap: 4px; }
+  .cat-pill {
+    width: 52px; height: 26px; border-radius: 13px; border: 2px solid var(--border);
+    background: var(--bg); color: var(--text-muted); font-size: 10px; font-weight: 700;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; padding: 0;
   }
-  .cat-fixed { background: rgba(9,132,227,0.15); color: var(--blue); }
-  .cat-variable { background: rgba(225,112,85,0.15); color: var(--orange); }
-  .cat-crypto { background: rgba(253,203,110,0.15); color: var(--yellow); }
+  .cat-pill:hover { border-color: var(--accent); color: var(--text); }
+  .cat-pill[data-cat="fixed"].active { border-color: var(--blue); background: var(--blue); color: white; }
+  .cat-pill[data-cat="variable"].active { border-color: var(--orange); background: var(--orange); color: white; }
+  .cat-pill[data-cat="crypto"].active { border-color: var(--yellow); background: var(--yellow); color: var(--bg); }
+
+  /* Validation */
+  .invalid { border-color: var(--red) !important; }
+  .invalid::placeholder { color: var(--red) !important; opacity: 0.7; }
+  .cat-pills.invalid .cat-pill { border-color: var(--red); }
+  .form-section.has-errors { border-color: var(--red); }
 
   .prev-hint {
     font-size: 11px; color: var(--text-muted); margin-top: 2px;

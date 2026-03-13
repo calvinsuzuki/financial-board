@@ -103,13 +103,13 @@
 <div class="modal-overlay" id="modal-month">
   <div class="modal">
     <h3 id="modal-month-title">Adicionar M&ecirc;s</h3>
-    <p>Preencha os dados do m&ecirc;s organizados por categoria.</p>
+    <p>Preencha os dados do m&ecirc;s.</p>
 
     <div class="form-section">
       <h4>Informa&ccedil;&otilde;es Gerais</h4>
       <div class="form-row three">
-        <div class="input-group"><label>M&ecirc;s</label><select id="f-month"></select></div>
-        <div class="input-group"><label>Ano</label><input type="number" id="f-year" value="2026" min="2020" max="2040"></div>
+        <div class="input-group"><label>M&ecirc;s</label><select id="f-month" onchange="autoFillDate()"></select></div>
+        <div class="input-group"><label>Ano</label><input type="number" id="f-year" value="2026" min="2020" max="2040" onchange="autoFillDate()"></div>
         <div class="input-group"><label>Data refer&ecirc;ncia</label><input type="text" id="f-date" placeholder="dd/mm/aaaa"></div>
       </div>
       <div class="form-row">
@@ -127,23 +127,8 @@
       <div style="font-size:11px;color:var(--text-muted);margin-top:4px;" id="calc-days"></div>
     </div>
 
-    <div class="cat-form-header cat-fixed">
-      <span>Renda Fixa</span>
-      <button class="btn-sm" onclick="addBrokerSection('fixed')" style="border-color:var(--blue);color:var(--blue);">+ Corretora</button>
-    </div>
-    <div id="brokers-fixed"></div>
-
-    <div class="cat-form-header cat-variable">
-      <span>Renda Vari&aacute;vel</span>
-      <button class="btn-sm" onclick="addBrokerSection('variable')" style="border-color:var(--orange);color:var(--orange);">+ Corretora</button>
-    </div>
-    <div id="brokers-variable"></div>
-
-    <div class="cat-form-header cat-crypto">
-      <span>Crypto</span>
-      <button class="btn-sm" onclick="addBrokerSection('crypto')" style="border-color:var(--yellow);color:var(--yellow);">+ Exchange</button>
-    </div>
-    <div id="brokers-crypto"></div>
+    <div id="brokers-all"></div>
+    <button class="add-inv-btn" onclick="addBrokerSection()" style="margin-bottom:16px;">+ Corretora / Exchange</button>
 
     <div class="modal-actions">
       <button class="btn btn-primary" onclick="saveMonth()">Salvar</button>
@@ -182,6 +167,12 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="data.js"></script>
-<script src="script.js"></script>
+<script src="js/state.js"></script>
+<script src="js/crypto.js"></script>
+<script src="js/helpers.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/forms.js"></script>
+<script src="js/render.js"></script>
+<script>init();</script>
 </body>
 </html>

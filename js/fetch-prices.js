@@ -42,8 +42,10 @@ async function fetchAllPrices() {
     if (catId === 'fixed') return;
 
     sec.querySelectorAll('.inv-entry').forEach(function(entry) {
-      var tickerInput = entry.querySelector('.inv-ticker');
-      var qtyInput = entry.querySelector('.inv-qty');
+      var vc = entry.querySelector('.inv-row-varcrp');
+      if (!vc) return;
+      var tickerInput = vc.querySelector('.inv-ticker');
+      var qtyInput = vc.querySelector('.inv-qty');
       if (!tickerInput || !qtyInput) return;
       var ticker = tickerInput.value.trim();
       var qty = parseFloat(qtyInput.value.replace(',', '.')) || 0;
@@ -100,14 +102,19 @@ async function fetchAllPrices() {
 
     if (priceBrl != null) {
       var value = e.qty * priceBrl;
-      var valInput = e.entry.querySelector('.inv-val');
+      // Update price input
+      var vc = e.entry.querySelector('.inv-row-varcrp');
+      var priceInput = vc.querySelector('.inv-price');
+      priceInput.value = fmtI(priceBrl);
+      if (priceUsd) priceInput.dataset.priceUsd = priceUsd;
+      // Update value input
+      var valInput = vc.querySelector('.inv-val');
       valInput.value = fmtI(value);
       valInput.classList.remove('invalid');
-      // Store USD price for crypto
-      if (priceUsd) valInput.dataset.priceUsd = priceUsd;
       // Flash green briefly
+      priceInput.style.background = 'rgba(0,184,148,0.15)';
       valInput.style.background = 'rgba(0,184,148,0.15)';
-      setTimeout(function() { valInput.style.background = ''; }, 1500);
+      setTimeout(function() { priceInput.style.background = ''; valInput.style.background = ''; }, 1500);
       updated++;
     } else {
       notFound.push(e.ticker);

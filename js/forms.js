@@ -123,11 +123,11 @@ function updateTickerVisibility(sec) {
   var activeCat = sec.querySelector('.cat-pill.active');
   var catId = activeCat ? activeCat.dataset.cat : '';
   var isFixed = (catId === 'fixed' || catId === '');
-  sec.querySelectorAll('.ticker-row').forEach(function(row) {
-    row.style.display = isFixed ? 'none' : 'flex';
+  sec.querySelectorAll('.inv-row-fixed').forEach(function(el) {
+    el.style.display = isFixed ? '' : 'none';
   });
-  sec.querySelectorAll('.fixed-only-row').forEach(function(row) {
-    row.style.display = isFixed ? '' : 'none';
+  sec.querySelectorAll('.inv-row-varcrp').forEach(function(el) {
+    el.style.display = isFixed ? 'none' : '';
   });
 }
 
@@ -137,9 +137,15 @@ function updateAllTickerVisibility() {
   });
 }
 
+function getVisibleVal(entry) {
+  var fixed = entry.querySelector('.inv-row-fixed');
+  if (fixed && fixed.style.display !== 'none') return fixed.querySelector('.inv-val');
+  return entry.querySelector('.inv-row-varcrp .inv-val');
+}
+
 function calcBrokerTotal(sec) {
   let sum = 0;
-  sec.querySelectorAll('.inv-val').forEach(inp => { sum += parseR(inp.value); });
+  sec.querySelectorAll('.inv-entry').forEach(entry => { sum += parseR(getVisibleVal(entry).value); });
   return sum;
 }
 
@@ -171,34 +177,80 @@ function addInvRow(container, d, prevValue) {
   const uid = 'inv-' + Math.random().toString(36).slice(2,8);
   const ticker = d?.ticker || '';
   const qty = d?.quantity ? String(d.quantity).replace('.', ',') : '';
+  const unitPrice = (d?.quantity && d?.value) ? fmtI(d.value / d.quantity) : '';
+  const priceUsd = d?.priceUsd || '';
 
   wrapper.innerHTML = `
-    <div class="inv-form-row">
-      <div class="input-group"><label>Nome</label><input type="text" class="inv-name" value="${d?.name||''}" placeholder="CDB, LCI, A\u00e7\u00e3o..."></div>
-      <div class="input-group"><label>Valor (R$)</label><input type="text" class="inv-val" value="${d?fmtI(d.value):''}" placeholder="1.000,49" data-prev="${pv}" ${d&&d.priceUsd?'data-price-usd="'+d.priceUsd+'"':''} oninput="this.classList.remove('invalid');recalcForm()">
-        ${pv!==''?`<div class="prev-hint">Anterior: <span class="prev-val">${fmtR(pv)}</span></div>`:''}</div>
-      <button class="btn-sm danger" onclick="this.closest('.inv-entry').remove();recalcForm();" style="margin-bottom:0;">&times;</button>
-    </div>
-    <div class="inv-form-row ticker-row" style="display:none;">
-      <div class="input-group" style="margin:0;"><label>Ticker</label><input type="text" class="inv-ticker" value="${ticker}" placeholder="bitcoin, IVVB11..." style="padding:7px 10px;font-size:12px;"></div>
-      <div class="input-group" style="margin:0;"><label>Quantidade</label><input type="text" class="inv-qty" value="${qty}" placeholder="0,5 / 50" style="padding:7px 10px;font-size:12px;"></div>
-    </div>
-    <div class="inv-form-extra fixed-only-row">
-      <div class="rate-pills" data-uid="${uid}">
-        <button type="button" class="rate-pill ${rateType==='pre'?'active':''}" data-t="pre" onclick="pickRate(this)" title="Pr\u00e9-fixado">PR\u00c9</button>
-        <button type="button" class="rate-pill ${rateType==='pos'?'active':''}" data-t="pos" onclick="pickRate(this)" title="P\u00f3s-fixado (CDI)">P\u00d3S</button>
-        <button type="button" class="rate-pill ${rateType==='ipca'?'active':''}" data-t="ipca" onclick="pickRate(this)" title="IPCA+">IPCA</button>
-        <button type="button" class="rate-pill ${rateType==='var'?'active':''}" data-t="var" onclick="pickRate(this)" title="Vari\u00e1vel">VAR</button>
+    <div class="inv-row-fixed">
+      <div class="inv-form-row">
+        <div class="input-group"><label>Nome</label><input type="text" class="inv-name" value="${d?.name||''}" placeholder="CDB, LCI..."></div>
+        <div class="input-group"><label>Valor (R$)</label><input type="text" class="inv-val" value="${d?fmtI(d.value):''}" placeholder="1.000,49" data-prev="${pv}" oninput="this.classList.remove('invalid');recalcForm()">
+          ${pv!==''?`<div class="prev-hint">Anterior: <span class="prev-val">${fmtR(pv)}</span></div>`:''}</div>
+        <button class="btn-sm danger" onclick="this.closest('.inv-entry').remove();recalcForm();" style="margin-bottom:0;">&times;</button>
       </div>
-      <div class="input-group" style="margin:0;" id="${uid}-rate-wrap">
-        ${rateType==='var'?'':`<input type="text" class="inv-rate-val" value="${rateVal}" placeholder="${ratePlaceholder(rateType)}" style="padding:7px 10px;font-size:12px;">`}
+      <div class="inv-form-extra">
+        <div class="rate-pills" data-uid="${uid}">
+          <button type="button" class="rate-pill ${rateType==='pre'?'active':''}" data-t="pre" onclick="pickRate(this)" title="Pr\u00e9-fixado">PR\u00c9</button>
+          <button type="button" class="rate-pill ${rateType==='pos'?'active':''}" data-t="pos" onclick="pickRate(this)" title="P\u00f3s-fixado (CDI)">P\u00d3S</button>
+          <button type="button" class="rate-pill ${rateType==='ipca'?'active':''}" data-t="ipca" onclick="pickRate(this)" title="IPCA+">IPCA</button>
+          <button type="button" class="rate-pill ${rateType==='var'?'active':''}" data-t="var" onclick="pickRate(this)" title="Vari\u00e1vel">VAR</button>
+        </div>
+        <div class="input-group" style="margin:0;" id="${uid}-rate-wrap">
+          ${rateType==='var'?'':`<input type="text" class="inv-rate-val" value="${rateVal}" placeholder="${ratePlaceholder(rateType)}" style="padding:7px 10px;font-size:12px;">`}
+        </div>
+        <div class="input-group" style="margin:0;">
+          <input type="text" class="inv-mat" value="${matVal || 'Liq. Di\u00e1ria'}" placeholder="Liq. Di\u00e1ria" style="padding:7px 10px;font-size:12px;">
+        </div>
       </div>
-      <div class="input-group" style="margin:0;">
-        <input type="text" class="inv-mat" value="${matVal || 'Liq. Di\u00e1ria'}" placeholder="Liq. Di\u00e1ria" style="padding:7px 10px;font-size:12px;">
+    </div>
+    <div class="inv-row-varcrp">
+      <div class="inv-form-row inv-row-vc-top">
+        <div class="input-group"><label>Nome</label><input type="text" class="inv-name" value="${d?.name||''}" placeholder="A\u00e7\u00e3o, ETF, Coin..."></div>
+        <div class="input-group" style="max-width:110px;"><label>Ticker</label><input type="text" class="inv-ticker" value="${ticker}" placeholder="IVVB11" style="padding:7px 10px;font-size:12px;"></div>
+        <div class="input-group"><label>Pre\u00e7o (R$)</label><input type="text" class="inv-price" value="${unitPrice}" placeholder="100,00" ${priceUsd?'data-price-usd="'+priceUsd+'"':''} style="padding:7px 10px;font-size:12px;" oninput="bindPrice(this)"></div>
+        <button class="btn-sm danger" onclick="this.closest('.inv-entry').remove();recalcForm();" style="margin-bottom:0;">&times;</button>
+      </div>
+      <div class="inv-form-row inv-row-vc-bot">
+        <div class="input-group"><label>Quantidade</label><input type="text" class="inv-qty" value="${qty}" placeholder="0,5 / 50" oninput="bindQty(this)"></div>
+        <div class="input-group"><label>Valor (R$)</label><input type="text" class="inv-val" value="${d?fmtI(d.value):''}" placeholder="1.000,49" data-prev="${pv}" oninput="bindVal(this);this.classList.remove('invalid');recalcForm()">
+          ${pv!==''?`<div class="prev-hint">Anterior: <span class="prev-val">${fmtR(pv)}</span></div>`:''}</div>
       </div>
     </div>
   `;
   container.appendChild(wrapper);
+}
+
+function bindPrice(el) {
+  var entry = el.closest('.inv-entry');
+  var qtyInput = entry.querySelector('.inv-qty');
+  var qty = parseFloat((qtyInput.value || '').replace(',', '.')) || 0;
+  var price = parseR(el.value);
+  if (qty && price) {
+    entry.querySelector('.varcrp-val-row .inv-val').value = fmtI(qty * price);
+    recalcForm();
+  }
+}
+
+function bindQty(el) {
+  var entry = el.closest('.inv-entry');
+  var price = parseR(entry.querySelector('.inv-price').value);
+  var qty = parseFloat(el.value.replace(',', '.')) || 0;
+  if (qty && price) {
+    entry.querySelector('.varcrp-val-row .inv-val').value = fmtI(qty * price);
+    recalcForm();
+  }
+}
+
+function bindVal(el) {
+  var entry = el.closest('.inv-entry');
+  var priceInput = entry.querySelector('.inv-price');
+  if (!priceInput) return;
+  var price = parseR(priceInput.value);
+  if (price) {
+    var val = parseR(el.value);
+    var qty = val / price;
+    entry.querySelector('.inv-qty').value = String(parseFloat(qty.toPrecision(8))).replace('.', ',');
+  }
 }
 
 function ratePlaceholder(t) {
@@ -270,7 +322,7 @@ function validateForm() {
     }
     // Investments
     sec.querySelectorAll('.inv-entry').forEach(entry => {
-      var valInput = entry.querySelector('.inv-val');
+      var valInput = getVisibleVal(entry);
       if (!valInput.value.trim() || parseR(valInput.value) <= 0) {
         valInput.classList.add('invalid');
         secHasError = true;
@@ -341,22 +393,28 @@ async function saveMonth() {
     const catId = activeCat.dataset.cat;
     const investments = [];
     let bTotal = 0;
+    var isFixed = catId === 'fixed';
     sec.querySelectorAll('.inv-entry').forEach(entry => {
-      const name = entry.querySelector('.inv-name').value.trim();
-      const value = parseR(entry.querySelector('.inv-val').value);
-      const rate = readInvRate(entry);
-      const mat = entry.querySelector('.inv-mat');
-      const maturity = mat && mat.value.trim() ? mat.value.trim() : 'Liq. Di\u00e1ria';
-      const tickerInput = entry.querySelector('.inv-ticker');
-      const qtyInput = entry.querySelector('.inv-qty');
+      var wrapper = isFixed ? entry.querySelector('.inv-row-fixed') : entry.querySelector('.inv-row-varcrp');
+      const name = wrapper.querySelector('.inv-name').value.trim();
+      const valEl = wrapper.querySelector('.inv-val');
+      const value = parseR(valEl.value);
+      var rate = '', maturity = 'Liq. Di\u00e1ria';
+      if (isFixed) {
+        rate = readInvRate(entry);
+        var mat = wrapper.querySelector('.inv-mat');
+        maturity = mat && mat.value.trim() ? mat.value.trim() : 'Liq. Di\u00e1ria';
+      }
+      const tickerInput = wrapper.querySelector('.inv-ticker');
+      const qtyInput = wrapper.querySelector('.inv-qty');
+      const priceInput = wrapper.querySelector('.inv-price');
       const ticker = tickerInput ? tickerInput.value.trim() : '';
       const quantity = qtyInput ? parseFloat(qtyInput.value.replace(',', '.')) || 0 : 0;
       if (name || value) {
         var inv = { name, value, rate, maturity };
         if (ticker) inv.ticker = ticker;
         if (quantity) inv.quantity = quantity;
-        var valEl = entry.querySelector('.inv-val');
-        if (valEl && valEl.dataset.priceUsd) inv.priceUsd = parseFloat(valEl.dataset.priceUsd);
+        if (priceInput && priceInput.dataset.priceUsd) inv.priceUsd = parseFloat(priceInput.dataset.priceUsd);
         investments.push(inv);
         bTotal += value;
       }

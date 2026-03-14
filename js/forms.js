@@ -89,7 +89,7 @@ function addBrokerSection(catId, name) {
   const container = document.getElementById('brokers-all');
   const div = document.createElement('div');
   div.className = 'form-section';
-  catId = catId || '';
+  catId = catId || 'fixed';
   div.innerHTML = `
     <h4>
       <span style="display:flex;align-items:center;gap:8px;">
@@ -122,9 +122,12 @@ function pickCat(btn) {
 function updateTickerVisibility(sec) {
   var activeCat = sec.querySelector('.cat-pill.active');
   var catId = activeCat ? activeCat.dataset.cat : '';
-  var show = (catId === 'crypto' || catId === 'variable');
+  var isFixed = (catId === 'fixed' || catId === '');
   sec.querySelectorAll('.ticker-row').forEach(function(row) {
-    row.style.display = show ? 'flex' : 'none';
+    row.style.display = isFixed ? 'none' : 'flex';
+  });
+  sec.querySelectorAll('.fixed-only-row').forEach(function(row) {
+    row.style.display = isFixed ? '' : 'none';
   });
 }
 
@@ -180,7 +183,7 @@ function addInvRow(container, d, prevValue) {
       <div class="input-group" style="margin:0;"><label>Ticker</label><input type="text" class="inv-ticker" value="${ticker}" placeholder="bitcoin, IVVB11..." style="padding:7px 10px;font-size:12px;"></div>
       <div class="input-group" style="margin:0;"><label>Quantidade</label><input type="text" class="inv-qty" value="${qty}" placeholder="0,5 / 50" style="padding:7px 10px;font-size:12px;"></div>
     </div>
-    <div class="inv-form-extra">
+    <div class="inv-form-extra fixed-only-row">
       <div class="rate-pills" data-uid="${uid}">
         <button type="button" class="rate-pill ${rateType==='pre'?'active':''}" data-t="pre" onclick="pickRate(this)" title="Pr\u00e9-fixado">PR\u00c9</button>
         <button type="button" class="rate-pill ${rateType==='pos'?'active':''}" data-t="pos" onclick="pickRate(this)" title="P\u00f3s-fixado (CDI)">P\u00d3S</button>

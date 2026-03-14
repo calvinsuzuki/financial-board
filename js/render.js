@@ -148,7 +148,7 @@ function updateDistChart() {
     type:'doughnut',
     data:{ labels:data.map(d=>d.name), datasets:[{data:data.map(d=>d.value),backgroundColor:data.map(d=>d.color),borderColor:'#1a1d2e',borderWidth:3,hoverOffset:8}] },
     options:{
-      responsive:true, maintainAspectRatio:false, cutout:'65%',
+      responsive:true, maintainAspectRatio:false, cutout:'65%', aspectRatio:1,
       plugins:{
         legend:{position:'bottom',labels:{color:'#8b8fa3',padding:16,usePointStyle:true}},
         tooltip:{callbacks:{label:c=>{const t=c.dataset.data.reduce((a,b)=>a+b,0);return c.label+': '+fmtR(c.parsed)+' ('+(c.parsed/t*100).toFixed(1)+'%)';}}}

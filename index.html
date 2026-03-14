@@ -13,21 +13,33 @@
   <div class="lock-box">
     <div class="lock-icon">&#128274;</div>
     <h1>Dashboard Financeiro</h1>
-    <p id="auth-desc">Dados encontrados. Digite sua senha para acessar.</p>
+    <p id="auth-desc"></p>
     <p id="auth-status" style="font-size:11px;margin-bottom:16px;"></p>
 
-    <div class="input-group">
-      <input type="password" id="login-pw" placeholder="Senha" autocomplete="current-password">
-    </div>
-    <div class="error-msg" id="login-err">Senha incorreta</div>
-    <button class="btn btn-primary" id="login-btn" onclick="doLogin()">Desbloquear</button>
+    <!-- Login mode (data.js exists) -->
+    <div id="auth-login">
+      <div class="input-group">
+        <input type="password" id="login-pw" placeholder="Senha" autocomplete="current-password">
+      </div>
+      <div class="error-msg" id="login-err">Senha incorreta</div>
+      <button class="btn btn-primary" id="login-btn" onclick="doLogin()">Desbloquear</button>
 
-    <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border);">
+      <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border);">
+        <label class="btn btn-sm" style="width:100%;display:block;cursor:pointer;text-align:center;">
+          Carregar outro data.js
+          <input type="file" accept=".js,.json" style="display:none;" onchange="importDataFile(this)">
+        </label>
+        <button class="btn btn-sm" style="width:100%;margin-top:8px;color:var(--accent-light);border-color:var(--accent-light);border-style:dashed;" onclick="startFresh()">Criar novo dashboard (ignorar dados)</button>
+      </div>
+    </div>
+
+    <!-- Welcome mode (no data.js) -->
+    <div id="auth-welcome" style="display:none;">
+      <button class="btn btn-primary" style="width:100%;margin-bottom:12px;" onclick="startFresh()">Criar novo dashboard</button>
       <label class="btn btn-sm" style="width:100%;display:block;cursor:pointer;text-align:center;">
-        Carregar outro data.js
+        Carregar data.js existente
         <input type="file" accept=".js,.json" style="display:none;" onchange="importDataFile(this)">
       </label>
-      <button class="btn btn-sm" style="width:100%;margin-top:8px;color:var(--accent-light);border-color:var(--accent-light);border-style:dashed;" onclick="startFresh()">Criar novo dashboard (ignorar dados)</button>
     </div>
   </div>
 </div>
@@ -39,7 +51,8 @@
     <div class="header-actions">
       <button class="btn-sm accent" onclick="openAddMonth()">+ Novo M&ecirc;s</button>
       <button class="btn-sm" onclick="openExport()">Salvar Dados</button>
-      <button class="btn-sm" onclick="location.reload()">Sair</button>
+      <button class="btn-sm" onclick="doClearBoard()">Novo</button>
+      <button class="btn-sm" onclick="doLogout()">Sair</button>
     </div>
   </div>
 

@@ -76,17 +76,7 @@ async function init() {
   document.getElementById('export-pw2').addEventListener('keydown', function(e) { if (e.key === 'Enter') manualDownload(); });
   document.querySelectorAll('.modal-overlay').forEach(function(el) { el.addEventListener('click', function(e) { if (e.target === el) el.classList.remove('show'); }); });
 
-  if (ENCRYPTED_PAYLOAD) {
-    var status = document.getElementById('auth-status');
-    status.textContent = 'Dados encontrados (' + Math.round(ENCRYPTED_PAYLOAD.length / 1024) + 'KB criptografados)';
-    status.style.color = 'var(--green)';
-    showScreen('screen-auth');
-    document.getElementById('login-pw').focus();
-  } else {
-    appData = getDummyData();
-    showScreen('dashboard');
-    renderDashboard();
-  }
+  showAuthScreen();
 }
 
 function startFresh() {
@@ -137,6 +127,46 @@ async function doLogin() {
     document.getElementById('login-err').style.display = 'block';
     document.getElementById('login-btn').textContent = 'Desbloquear';
   }
+}
+
+function showAuthScreen() {
+  var hasData = !!ENCRYPTED_PAYLOAD;
+  document.getElementById('auth-login').style.display = hasData ? 'block' : 'none';
+  document.getElementById('auth-welcome').style.display = hasData ? 'none' : 'block';
+  document.getElementById('auth-desc').textContent = hasData
+    ? 'Dados encontrados. Digite sua senha para acessar.'
+    : 'Bem-vindo! Crie um novo dashboard ou carregue seus dados.';
+  if (hasData) {
+    var status = document.getElementById('auth-status');
+    status.textContent = 'Dados encontrados (' + Math.round(ENCRYPTED_PAYLOAD.length / 1024) + 'KB criptografados)';
+    status.style.color = 'var(--green)';
+    document.getElementById('login-pw').focus();
+  } else {
+    document.getElementById('auth-status').textContent = '';
+  }
+  showScreen('screen-auth');
+}
+
+function doClearBoard() {
+  if (!confirm('Isso vai limpar todos os dados do dashboard atual. Deseja continuar?')) return;
+  APP_PW = null;
+  appData = { months: [] };
+  selMonth = 0;
+  selCat = 'all';
+  renderDashboard();
+}
+
+function doLogout() {
+  if (!confirm('Dados não salvos serão perdidos. Deseja sair?')) return;
+  APP_PW = null;
+  appData = { months: [] };
+  selMonth = 0;
+  selCat = 'all';
+  editIdx = -1;
+  document.getElementById('login-pw').value = '';
+  document.getElementById('login-err').style.display = 'none';
+  document.getElementById('login-btn').textContent = 'Desbloquear';
+  showAuthScreen();
 }
 
 function openExport() {

@@ -32,6 +32,22 @@ Each category contains brokers, each broker has investments with `{ name, value,
 
 **Rendering pipeline** — `renderDashboard()` orchestrates: `renderSummary()` → `renderMonthTabs()` → `renderCharts()` → `updateDistChart()` → `renderDetail()` → `renderTable()`.
 
+- `filterCat(cat)` re-renders summary, charts, detail, and table for a single category (or 'all').
+- `selectMonth(i)` only calls `updateDistChart()` (optimization — avoids full re-render).
+
+**Key state variables** (in `state.js`, all `var`):
+- `APP_PW` — current password (null until login or export)
+- `appData` — main data object `{ months: [...] }`
+- `selMonth` / `selCat` — currently selected month index and category filter
+- `editIdx` / `deleteIdx` — month being edited/deleted (-1 if none)
+- `formPrevMonth` — snapshot of previous month during form editing (for gain calc hints)
+
+**Gain recalculation cascade** — when saving any month (`forms.js:saveMonth`), gain and accGain are recalculated for the edited month AND all subsequent months. Editing month 2 of 5 will update months 2–5.
+
+**Form bidirectional binding** — for variable/crypto investments, price × quantity = value. Editing any one field auto-updates the others via `bindPrice()`, `bindQty()`, `bindVal()`.
+
+**Legacy migration** — `auth.js:doLogin()` migrates old `m.brokers` → `m.categories` structure on decrypt.
+
 ## Key Constraints
 
 - **`file://` protocol**: `fetch()` won't load local files. Data is stored as `var ENCRYPTED_PAYLOAD = "..."` in `data.js` loaded via `<script src>`. External API calls (CoinGecko, brapi.dev) work because they return `Access-Control-Allow-Origin: *`.

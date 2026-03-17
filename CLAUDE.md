@@ -41,7 +41,7 @@ Each category contains brokers, each broker has investments with `{ name, value,
 
 ## External APIs
 
-- **CoinGecko** (free, no key): crypto prices in BRL+USD — `fetch-prices.js`
+- **Binance** (free, no key): crypto prices in BRL+USD — `fetch-prices.js`
 - **brapi.dev** (free): Brazilian stock/ETF prices in BRL — `fetch-prices.js`
 
 ## Conventions

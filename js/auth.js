@@ -26,9 +26,9 @@ function getDummyData() {
           ],
           crypto: [
             { name: 'Binance', total: 5000, investments: [
-              { name: 'Bitcoin', value: 3000, rate: '', maturity: '', ticker: 'bitcoin', quantity: 0.005 },
-              { name: 'Ethereum', value: 1400, rate: '', maturity: '', ticker: 'ethereum', quantity: 0.08 },
-              { name: 'Solana', value: 600, rate: '', maturity: '', ticker: 'solana', quantity: 3.5 }
+              { name: 'Bitcoin', value: 3000, rate: '', maturity: '', ticker: 'BTC', quantity: 0.005 },
+              { name: 'Ethereum', value: 1400, rate: '', maturity: '', ticker: 'ETH', quantity: 0.08 },
+              { name: 'Solana', value: 600, rate: '', maturity: '', ticker: 'SOL', quantity: 3.5 }
             ]}
           ]
         }
@@ -58,9 +58,9 @@ function getDummyData() {
           ],
           crypto: [
             { name: 'Binance', total: 5180, investments: [
-              { name: 'Bitcoin', value: 3125, rate: '', maturity: '', ticker: 'bitcoin', quantity: 0.005 },
-              { name: 'Ethereum', value: 1455, rate: '', maturity: '', ticker: 'ethereum', quantity: 0.08 },
-              { name: 'Solana', value: 600, rate: '', maturity: '', ticker: 'solana', quantity: 3.5 }
+              { name: 'Bitcoin', value: 3125, rate: '', maturity: '', ticker: 'BTC', quantity: 0.005 },
+              { name: 'Ethereum', value: 1455, rate: '', maturity: '', ticker: 'ETH', quantity: 0.08 },
+              { name: 'Solana', value: 600, rate: '', maturity: '', ticker: 'SOL', quantity: 3.5 }
             ]}
           ]
         }
@@ -114,6 +114,7 @@ async function doLogin() {
   try {
     appData = JSON.parse(await dec(ENCRYPTED_PAYLOAD, pw));
     APP_PW = pw;
+    if (appData.brapiToken) BRAPI_TOKEN = appData.brapiToken;
     appData.months.forEach(function(m) {
       if (m.brokers && !m.categories) {
         m.categories = { fixed: m.brokers, variable: [], crypto: [] };

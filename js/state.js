@@ -12,6 +12,7 @@ const CAT_MAP = Object.fromEntries(CATEGORIES.map(c => [c.id, c]));
 const defaultBrokerColors = ['#8B10AE','#00b894','#e17055','#0984e3','#fdcb6e','#fd79a8','#00cec9','#e84393'];
 
 var APP_PW = null;
+var BRAPI_TOKEN = '';
 var appData = { months: [] };
 /*
   appData.months[i] = {

@@ -1,37 +1,55 @@
-// Auto-fetch prices for crypto (CoinGecko) and variable/stocks (brapi.dev)
+// Auto-fetch prices for crypto (Binance) and variable/stocks (brapi.dev)
 
-async function fetchCryptoPrices(coinIds) {
-  if (!coinIds.length) return {};
-  var ids = coinIds.join(',');
-  var url = 'https://api.coingecko.com/api/v3/simple/price?ids=' + encodeURIComponent(ids) + '&vs_currencies=brl,usd';
-  var resp = await fetch(url);
-  if (!resp.ok) throw new Error('CoinGecko: ' + resp.status);
-  var data = await resp.json();
+async function fetchCryptoPrices(symbols) {
+  if (!symbols.length) return {};
   var result = {};
-  Object.keys(data).forEach(function(id) {
-    if (data[id].brl) result[id.toLowerCase()] = { brl: data[id].brl, usd: data[id].usd || 0 };
-  });
+
+  await Promise.all(symbols.map(async function(sym) {
+    try {
+      var responses = await Promise.all([
+        fetch('https://api.binance.com/api/v3/ticker/price?symbol=' + sym + 'BRL'),
+        fetch('https://api.binance.com/api/v3/ticker/price?symbol=' + sym + 'USDT')
+      ]);
+      var entry = {};
+      if (responses[0].ok) entry.brl = parseFloat((await responses[0].json()).price);
+      if (responses[1].ok) entry.usd = parseFloat((await responses[1].json()).price);
+      if (entry.brl || entry.usd) result[sym] = entry;
+    } catch(e) { /* skip failed ticker */ }
+  }));
+
   return result;
 }
 
 async function fetchStockPrices(tickers) {
   if (!tickers.length) return {};
-  var symbols = tickers.join(',');
-  var url = 'https://brapi.dev/api/quote/' + encodeURIComponent(symbols);
-  var resp = await fetch(url);
-  if (!resp.ok) throw new Error('brapi: ' + resp.status);
-  var data = await resp.json();
+  if (!BRAPI_TOKEN) {
+    var token = prompt('brapi.dev requer um token gratuito para cota\u00e7\u00f5es de a\u00e7\u00f5es.\nCrie em: https://brapi.dev (gr\u00e1tis)\n\nCole seu token:');
+    if (!token) throw new Error('Token brapi n\u00e3o informado');
+    BRAPI_TOKEN = token.trim();
+  }
   var result = {};
-  (data.results || []).forEach(function(r) {
-    if (r.symbol && r.regularMarketPrice) {
-      result[r.symbol.toUpperCase()] = r.regularMarketPrice;
-    }
-  });
+  var gotAuth = false;
+
+  await Promise.all(tickers.map(async function(ticker) {
+    try {
+      var resp = await fetch('https://brapi.dev/api/quote/' + ticker + '?token=' + encodeURIComponent(BRAPI_TOKEN));
+      if (resp.status === 401) { gotAuth = true; return; }
+      if (!resp.ok) return;
+      var data = await resp.json();
+      (data.results || []).forEach(function(r) {
+        if (r.symbol && r.regularMarketPrice) {
+          result[r.symbol.toUpperCase()] = r.regularMarketPrice;
+        }
+      });
+    } catch(e) { /* skip failed ticker */ }
+  }));
+
+  if (gotAuth) { BRAPI_TOKEN = ''; throw new Error('Token brapi inv\u00e1lido'); }
   return result;
 }
 
 async function fetchAllPrices() {
-  var cryptoIds = [];
+  var cryptoSymbols = [];
   var stockTickers = [];
   var entries = [];
 
@@ -52,8 +70,9 @@ async function fetchAllPrices() {
       if (!ticker || !qty) return;
 
       if (catId === 'crypto') {
-        cryptoIds.push(ticker.toLowerCase());
-        entries.push({ entry: entry, ticker: ticker.toLowerCase(), qty: qty, type: 'crypto' });
+        var sym = ticker.toUpperCase();
+        cryptoSymbols.push(sym);
+        entries.push({ entry: entry, ticker: sym, qty: qty, type: 'crypto' });
       } else if (catId === 'variable') {
         stockTickers.push(ticker.toUpperCase());
         entries.push({ entry: entry, ticker: ticker.toUpperCase(), qty: qty, type: 'stock' });
@@ -67,24 +86,17 @@ async function fetchAllPrices() {
   var stockPrices = {};
   var errors = [];
 
-  var uniqueCrypto = [...new Set(cryptoIds)];
+  var uniqueCrypto = [...new Set(cryptoSymbols)];
   var uniqueStocks = [...new Set(stockTickers)];
 
+  var fetches = [];
   if (uniqueCrypto.length) {
-    try {
-      cryptoPrices = await fetchCryptoPrices(uniqueCrypto);
-    } catch(e) {
-      errors.push('Crypto: ' + e.message);
-    }
+    fetches.push(fetchCryptoPrices(uniqueCrypto).then(function(r) { cryptoPrices = r; }).catch(function(e) { errors.push('Crypto: ' + e.message); }));
   }
-
   if (uniqueStocks.length) {
-    try {
-      stockPrices = await fetchStockPrices(uniqueStocks);
-    } catch(e) {
-      errors.push('A\u00e7\u00f5es: ' + e.message);
-    }
+    fetches.push(fetchStockPrices(uniqueStocks).then(function(r) { stockPrices = r; }).catch(function(e) { errors.push('A\u00e7\u00f5es: ' + e.message); }));
   }
+  await Promise.all(fetches);
 
   var updated = 0;
   var notFound = [];
@@ -102,16 +114,13 @@ async function fetchAllPrices() {
 
     if (priceBrl != null) {
       var value = e.qty * priceBrl;
-      // Update price input
       var vc = e.entry.querySelector('.inv-row-varcrp');
       var priceInput = vc.querySelector('.inv-price');
       priceInput.value = fmtI(priceBrl);
       if (priceUsd) priceInput.dataset.priceUsd = priceUsd;
-      // Update value input
       var valInput = vc.querySelector('.inv-val');
       valInput.value = fmtI(value);
       valInput.classList.remove('invalid');
-      // Flash green briefly
       priceInput.style.background = 'rgba(0,184,148,0.15)';
       valInput.style.background = 'rgba(0,184,148,0.15)';
       setTimeout(function() { priceInput.style.background = ''; valInput.style.background = ''; }, 1500);
@@ -143,6 +152,7 @@ async function doFetchPrices() {
     } else {
       btn.textContent = result.updated + ' atualizado(s)!';
       btn.style.color = 'var(--green)';
+      btn.disabled = false;
       setTimeout(function() { btn.textContent = origText; btn.style.color = ''; }, 2000);
       return;
     }

@@ -18,4 +18,5 @@ async function saveData() {
   if (APP_PW) {
     ENCRYPTED_PAYLOAD = await enc(JSON.stringify(appData), APP_PW);
   }
+  try { localStorage.setItem('appDataCache', JSON.stringify(appData)); } catch(e) {}
 }

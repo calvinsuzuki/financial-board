@@ -15,6 +15,7 @@ var APP_PW = null;
 var BRAPI_TOKEN = '';
 var USD_BRL_RATE = 0;
 var appData = { months: [] };
+var valuesHidden = false;
 /*
   appData.months[i] = {
     month: 0-11, year: 2026, date: "dd/mm/aaaa",

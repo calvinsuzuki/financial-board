@@ -298,3 +298,18 @@
   .empty-state p { margin-bottom: 24px; }
 
   .footer { text-align: center; padding: 20px; color: var(--text-muted); font-size: 12px; }
+
+  /* Hide values mode */
+  .values-hidden .summary-card .value,
+  .values-hidden .summary-card .sub,
+  .values-hidden .broker-total,
+  .values-hidden .broker-gain,
+  .values-hidden .inv-value,
+  .values-hidden .inv-gain,
+  .values-hidden .gain-badge,
+  .values-hidden .section-badge,
+  .values-hidden td:not(:first-child):not(:nth-child(2)) {
+    filter: blur(8px);
+    user-select: none;
+    pointer-events: none;
+  }

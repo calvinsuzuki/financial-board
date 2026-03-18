@@ -76,6 +76,22 @@ async function init() {
   document.getElementById('export-pw2').addEventListener('keydown', function(e) { if (e.key === 'Enter') manualDownload(); });
   document.querySelectorAll('.modal-overlay').forEach(function(el) { if (el.id === 'modal-month') return; el.addEventListener('click', function(e) { if (e.target === el) el.classList.remove('show'); }); });
 
+  // Try loading cached data for instant access (values hidden)
+  try {
+    var cached = localStorage.getItem('appDataCache');
+    if (cached) {
+      appData = JSON.parse(cached);
+      try { var t = localStorage.getItem('brapiToken'); if (t) BRAPI_TOKEN = t; } catch(e) {}
+      valuesHidden = true;
+      document.body.classList.add('values-hidden');
+      var btn = document.getElementById('toggle-eye-btn');
+      if (btn) btn.innerHTML = '&#128065;&#8205;&#128488;';
+      showScreen('dashboard');
+      renderDashboard();
+      return;
+    }
+  } catch(e) {}
+
   showAuthScreen();
 }
 
@@ -83,6 +99,10 @@ function startFresh() {
   ENCRYPTED_PAYLOAD = null;
   APP_PW = null;
   appData = getDummyData();
+  valuesHidden = false;
+  document.body.classList.remove('values-hidden');
+  var eyeBtn = document.getElementById('toggle-eye-btn');
+  if (eyeBtn) eyeBtn.innerHTML = '&#128065;';
   showScreen('dashboard');
   renderDashboard();
 }
@@ -122,6 +142,11 @@ async function doLogin() {
         m.totalInvested = undefined;
       }
     });
+    try { localStorage.setItem('appDataCache', JSON.stringify(appData)); } catch(e) {}
+    valuesHidden = false;
+    document.body.classList.remove('values-hidden');
+    var eyeBtn = document.getElementById('toggle-eye-btn');
+    if (eyeBtn) eyeBtn.innerHTML = '&#128065;';
     showScreen('dashboard');
     renderDashboard();
   } catch(e) {
@@ -164,6 +189,8 @@ function doLogout() {
   selMonth = 0;
   selCat = 'all';
   editIdx = -1;
+  valuesHidden = false;
+  document.body.classList.remove('values-hidden');
   document.getElementById('login-pw').value = '';
   document.getElementById('login-err').style.display = 'none';
   document.getElementById('login-btn').textContent = 'Desbloquear';
@@ -201,9 +228,45 @@ async function manualDownload() {
 
   APP_PW = pw;
   ENCRYPTED_PAYLOAD = await enc(JSON.stringify(appData), APP_PW);
+  try { localStorage.setItem('appDataCache', JSON.stringify(appData)); } catch(e) {}
   downloadDataFile();
 
   var ok = document.getElementById('export-ok');
   ok.textContent = 'data.js baixado! Substitua no reposit\u00f3rio.';
   ok.style.display = 'block';
+}
+
+async function toggleValuesVisibility() {
+  var btn = document.getElementById('toggle-eye-btn');
+  if (valuesHidden) {
+    // If already authenticated, just reveal
+    if (APP_PW) {
+      valuesHidden = false;
+      document.body.classList.remove('values-hidden');
+      if (btn) btn.innerHTML = '&#128065;';
+      return;
+    }
+    // Otherwise verify password via decryption
+    var pw = prompt('Digite a senha para exibir os valores:');
+    if (!pw) return;
+    if (ENCRYPTED_PAYLOAD) {
+      try {
+        var data = JSON.parse(await dec(ENCRYPTED_PAYLOAD, pw));
+        APP_PW = pw;
+        appData = data;
+        try { localStorage.setItem('appDataCache', JSON.stringify(appData)); } catch(e) {}
+        renderDashboard();
+      } catch(e) {
+        alert('Senha incorreta.');
+        return;
+      }
+    }
+    valuesHidden = false;
+    document.body.classList.remove('values-hidden');
+    if (btn) btn.innerHTML = '&#128065;';
+  } else {
+    valuesHidden = true;
+    document.body.classList.add('values-hidden');
+    if (btn) btn.innerHTML = '&#128065;&#8205;&#128488;';
+  }
 }

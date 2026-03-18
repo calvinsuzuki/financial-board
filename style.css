@@ -263,7 +263,16 @@
     display: flex; align-items: center; gap: 4px;
   }
   .prev-hint .prev-val { color: var(--accent-light); }
-  .inv-row-varcrp label { font-size: 10px; color: var(--accent-light); }
+  .inv-row-varcrp label { font-size: 13px; color: var(--text-muted); }
+  .cur-toggle {
+    display: inline-block; padding: 1px 8px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--bg);
+    color: var(--text-muted); font-size: 10px; font-weight: 700;
+    cursor: pointer; vertical-align: middle; transition: all 0.15s;
+    line-height: 1.4;
+  }
+  .cur-toggle:hover { border-color: var(--accent); color: var(--text); }
+  .cur-toggle[data-cur="USD"] { border-color: var(--green); color: var(--green); background: rgba(0,184,148,0.1); }
   .auto-calc-bar {
     background: rgba(0,184,148,0.1); border: 1px solid rgba(0,184,148,0.2);
     border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;

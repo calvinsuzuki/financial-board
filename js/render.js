@@ -35,9 +35,12 @@ function renderSummary() {
   const gainPct = prevTotal > 0 ? (cur.gain / prevTotal * 100) : 0;
   const annPct = days > 0 ? annualize(gainPct, days) : 0;
 
-  const fixedTotal = (cur.categories.fixed||[]).reduce((s,b)=>s+b.total,0);
-  const varTotal = (cur.categories.variable||[]).reduce((s,b)=>s+b.total,0);
-  const cryptoTotal = (cur.categories.crypto||[]).reduce((s,b)=>s+b.total,0);
+  const eff = getEffectiveTotals(cur);
+  const fixedTotal = eff.fixed + eff.fixedUsd;
+  const varTotal = eff.variable + eff.variableUsd;
+  const cryptoTotal = eff.crypto;
+
+  function usdSub(usd) { return usd > 0 ? `<div class="sub" style="color:var(--green);font-size:11px;">USD: ${fmtR(usd)}</div>` : ''; }
 
   document.getElementById('summary-grid').innerHTML = `
     <div class="summary-card">
@@ -59,11 +62,13 @@ function renderSummary() {
       <div class="label">Renda Fixa</div>
       <div class="value" style="color:var(--blue)">${fmtR(fixedTotal)}</div>
       <div class="sub" style="color:var(--text-muted)">${total?(fixedTotal/total*100).toFixed(1)+'%':'0%'} do total</div>
+      ${usdSub(eff.fixedUsd)}
     </div>
     <div class="summary-card">
       <div class="label">Renda Vari\u00e1vel</div>
       <div class="value" style="color:var(--orange)">${fmtR(varTotal)}</div>
       <div class="sub" style="color:var(--text-muted)">${total?(varTotal/total*100).toFixed(1)+'%':'0%'} do total</div>
+      ${usdSub(eff.variableUsd)}
     </div>
     <div class="summary-card">
       <div class="label">Crypto</div>
@@ -134,7 +139,13 @@ function updateDistChart() {
   let data, title;
   if (selCat==='all') {
     title = 'Distribui\u00e7\u00e3o por Categoria';
-    data = CATEGORIES.map(c => ({ name:c.name, value:getMonthTotal(cur,c.id), color:c.color })).filter(d=>d.value>0);
+    var eff = getEffectiveTotals(cur);
+    data = [];
+    if (eff.fixed > 0) data.push({ name: 'Renda Fixa', value: eff.fixed, color: '#0984e3' });
+    if (eff.fixedUsd > 0) data.push({ name: 'Renda Fixa USD', value: eff.fixedUsd, color: '#0984e380' });
+    if (eff.variable > 0) data.push({ name: 'Renda Vari\u00e1vel', value: eff.variable, color: '#e17055' });
+    if (eff.variableUsd > 0) data.push({ name: 'Renda Var. USD', value: eff.variableUsd, color: '#e1705580' });
+    if (eff.crypto > 0) data.push({ name: 'Crypto', value: eff.crypto, color: '#fdcb6e' });
   } else {
     title = 'Distribui\u00e7\u00e3o por Corretora';
     data = (cur.categories[selCat]||[]).filter(b=>b.total>0).map((b,i)=>({
@@ -151,7 +162,7 @@ function updateDistChart() {
       responsive:true, maintainAspectRatio:false, cutout:'65%', aspectRatio:1,
       plugins:{
         legend:{position:'bottom',labels:{color:'#8b8fa3',padding:16,usePointStyle:true}},
-        tooltip:{callbacks:{label:c=>{const t=c.dataset.data.reduce((a,b)=>a+b,0);return c.label+': '+fmtR(c.parsed)+' ('+(c.parsed/t*100).toFixed(1)+'%)';}}}
+        tooltip:{callbacks:{label:function(c){var t=c.dataset.data.reduce(function(a,b){return a+b;},0);return c.label+': '+fmtR(c.parsed)+' ('+(c.parsed/t*100).toFixed(1)+'%)';}}}
       }
     }
   });
@@ -168,11 +179,14 @@ function renderDetail() {
 
   const catsToShow = selCat==='all' ? CATEGORIES : [CAT_MAP[selCat]];
 
+  var detailEff = getEffectiveTotals(cur);
+  var detailEffMap = { fixed: detailEff.fixed + detailEff.fixedUsd, variable: detailEff.variable + detailEff.variableUsd, crypto: detailEff.crypto };
+
   catsToShow.forEach(cat => {
     const brokers = cur.categories[cat.id] || [];
     if (!brokers.length || !brokers.some(b=>b.total>0)) return;
 
-    html += `<div class="section-title">${cat.name} <span class="section-badge" style="background:${cat.color}22;color:${cat.color}">${fmtR(getMonthTotal(cur,cat.id))}</span></div>`;
+    html += `<div class="section-title">${cat.name} <span class="section-badge" style="background:${cat.color}22;color:${cat.color}">${fmtR(detailEffMap[cat.id])}</span></div>`;
     html += '<div class="broker-grid">';
 
     brokers.forEach((b,i) => {
@@ -191,20 +205,31 @@ function renderDetail() {
           <span class="broker-total">${fmtR(b.total)}</span>
         </div>`;
 
+      var xRate = cur.exchangeRate || 1;
       (b.investments||[]).forEach(inv => {
         if(!inv.name&&!inv.value) return;
+        var isUsd = inv.currency === 'USD' && cat.id !== 'crypto';
+        var brlVal = isUsd ? inv.value * xRate : inv.value;
         const pi = findPrevInv(prev, cat.id, b.name, inv.name);
-        const invGain = pi ? inv.value - pi.value : 0;
-        const invPct = pi && pi.value > 0 ? (invGain / pi.value * 100) : 0;
+        var prevRate = prev && prev.exchangeRate ? prev.exchangeRate : 1;
+        var piBrl = pi ? (pi.currency === 'USD' && cat.id !== 'crypto' ? pi.value * prevRate : pi.value) : 0;
+        const invGain = pi ? brlVal - piBrl : 0;
+        const invPct = pi && piBrl > 0 ? (invGain / piBrl * 100) : 0;
         const invAnn = (pi && days > 0) ? annualize(invPct, days) : 0;
+
+        var unitPriceStr = '';
+        if (inv.ticker && inv.quantity) {
+          unitPriceStr = inv.quantity+' \u00d7 '+(inv.currency==='USD'&&inv.priceUsd?fmtUsd(inv.priceUsd):fmtR(brlVal/inv.quantity))+'/un';
+        }
+        var usdHint = isUsd ? ' <span style="font-size:10px;color:var(--green);">'+fmtUsd(inv.value)+'</span>' : '';
 
         html += `<div class="investment-row">
           <div>
-            <div class="inv-name">${inv.name}${pi?`<span class="gain-badge ${invGain>=0?'pos':'neg'}">${fmtPct(invPct)}</span>`:''}</div>
-            <div class="inv-details">${inv.ticker&&inv.quantity?inv.quantity+' \u00d7 '+(inv.priceUsd?fmtUsd(inv.priceUsd):fmtR(inv.value/inv.quantity))+'/un':''} ${inv.rate?'| '+inv.rate:''}${inv.maturity?' | Venc: '+inv.maturity:''}</div>
+            <div class="inv-name">${inv.name}${inv.currency==='USD'?'<span style="font-size:10px;color:var(--green);margin-left:4px;">USD</span>':''}${pi?`<span class="gain-badge ${invGain>=0?'pos':'neg'}">${fmtPct(invPct)}</span>`:''}</div>
+            <div class="inv-details">${unitPriceStr} ${inv.rate?'| '+inv.rate:''}${inv.maturity?' | Venc: '+inv.maturity:''}</div>
           </div>
           <div>
-            <div class="inv-value">${fmtR(inv.value)}</div>
+            <div class="inv-value">${fmtR(brlVal)}${usdHint}</div>
             ${pi?`<div class="inv-gain"><span class="pct ${invGain>=0?'positive':'negative'}">${invGain>=0?'+':''}${fmtR(invGain)}</span>${days>0?`<div class="ann">${fmtPct(invAnn)} a.a.</div>`:''}</div>`:''}
           </div>
         </div>`;
@@ -233,11 +258,15 @@ function renderTable() {
     const days = (curDate && prevDate) ? daysBetween(prevDate, curDate) : 0;
     const annPct = days > 0 ? annualize(pctMonth, days) : 0;
 
+    var tEff = getEffectiveTotals(m);
+
     html += `<tr>
       <td><strong>${MONTHS[m.month].slice(0,3)}/${m.year}</strong></td>
       <td style="font-size:12px;color:var(--text-muted)">${m.date||'-'}</td>
       <td><strong>${fmtR(total)}</strong></td>`;
-    CATEGORIES.forEach(c => html += `<td>${fmtR(getMonthTotal(m,c.id))}</td>`);
+    html += `<td>${fmtR(tEff.fixed + tEff.fixedUsd)}</td>`;
+    html += `<td>${fmtR(tEff.variable + tEff.variableUsd)}</td>`;
+    html += `<td>${fmtR(tEff.crypto)}</td>`;
     html += `<td class="${m.gain>=0?'positive':'negative'}">${fmtR(m.gain)}</td>`;
     html += `<td class="${pctMonth>=0?'positive':'negative'}">${prev?fmtPct(pctMonth):'-'}</td>`;
     html += `<td style="color:var(--text-muted)">${days>0?fmtPct(annPct):'-'}</td>`;

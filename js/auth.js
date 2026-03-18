@@ -74,7 +74,7 @@ async function init() {
   MONTHS.forEach(function(m, i) { var o = document.createElement('option'); o.value = i; o.textContent = m; sel.appendChild(o); });
   document.getElementById('login-pw').addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
   document.getElementById('export-pw2').addEventListener('keydown', function(e) { if (e.key === 'Enter') manualDownload(); });
-  document.querySelectorAll('.modal-overlay').forEach(function(el) { el.addEventListener('click', function(e) { if (e.target === el) el.classList.remove('show'); }); });
+  document.querySelectorAll('.modal-overlay').forEach(function(el) { if (el.id === 'modal-month') return; el.addEventListener('click', function(e) { if (e.target === el) el.classList.remove('show'); }); });
 
   showAuthScreen();
 }
@@ -114,7 +114,7 @@ async function doLogin() {
   try {
     appData = JSON.parse(await dec(ENCRYPTED_PAYLOAD, pw));
     APP_PW = pw;
-    if (appData.brapiToken) BRAPI_TOKEN = appData.brapiToken;
+    try { var t = localStorage.getItem('brapiToken'); if (t) BRAPI_TOKEN = t; } catch(e) {}
     appData.months.forEach(function(m) {
       if (m.brokers && !m.categories) {
         m.categories = { fixed: m.brokers, variable: [], crypto: [] };

@@ -13,17 +13,21 @@ const defaultBrokerColors = ['#8B10AE','#00b894','#e17055','#0984e3','#fdcb6e','
 
 var APP_PW = null;
 var BRAPI_TOKEN = '';
+var USD_BRL_RATE = 0;
 var appData = { months: [] };
 /*
   appData.months[i] = {
     month: 0-11, year: 2026, date: "dd/mm/aaaa",
     aporte: 1500, gain: 600, accGain: 2533.48,
     categories: {
-      fixed:    [{ name: "PicPay", total: 52535.76, investments: [{ name, value, rate, maturity }] }],
+      fixed:    [{ name: "PicPay", total: 52535.76, investments: [{ name, value, rate, maturity, currency?: "USD" }] }],
       variable: [{ name: "XP HB", total: 5000, investments: [...] }],
       crypto:   [{ name: "Binance", total: 3434.97, investments: [...] }]
     }
   }
+  // currency: "USD" = value stored in USD. Multiplied by exchangeRate to get BRL for totals.
+  // exchangeRate: USD→BRL rate at save time. Used to convert USD investments.
+  // Fixed investments with rate "Variável" count toward Renda Variável in distribution.
 */
 var selMonth = 0;
 var selCat = 'all';

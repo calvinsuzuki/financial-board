@@ -26,6 +26,28 @@ function getMonthTotal(m, cat) {
   if (cat === 'all') return CATEGORIES.reduce((sum, c) => sum + (m.categories[c.id]||[]).reduce((s,b)=>s+b.total,0), 0);
   return (m.categories[cat]||[]).reduce((s,b)=>s+b.total,0);
 }
+function getEffectiveTotals(m) {
+  var rate = m.exchangeRate || 1;
+  var t = { fixed: 0, fixedUsd: 0, variable: 0, variableUsd: 0, crypto: 0 };
+  (m.categories.fixed||[]).forEach(function(b) {
+    (b.investments||[]).forEach(function(inv) {
+      var isVar = /vari[aá]vel/i.test(inv.rate);
+      var brl = inv.currency === 'USD' ? inv.value * rate : inv.value;
+      var cat = isVar ? 'variable' : 'fixed';
+      if (inv.currency === 'USD') t[cat + 'Usd'] += brl;
+      else t[cat] += brl;
+    });
+  });
+  (m.categories.variable||[]).forEach(function(b) {
+    (b.investments||[]).forEach(function(inv) {
+      var brl = inv.currency === 'USD' ? inv.value * rate : inv.value;
+      if (inv.currency === 'USD') t.variableUsd += brl;
+      else t.variable += brl;
+    });
+  });
+  (m.categories.crypto||[]).forEach(function(b) { t.crypto += b.total; });
+  return t;
+}
 
 function getPrev(idx) { return idx > 0 ? appData.months[idx-1] : null; }
 

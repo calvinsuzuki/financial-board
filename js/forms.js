@@ -22,6 +22,7 @@ function openAddMonth() {
 
   const prev = appData.months.length > 0 ? appData.months[appData.months.length - 1] : null;
   formPrevMonth = prev;
+  if (prev && prev.exchangeRate && !USD_BRL_RATE) USD_BRL_RATE = prev.exchangeRate;
 
   if (prev) {
     let nm = prev.month + 1, ny = prev.year;
@@ -59,6 +60,7 @@ function openEditMonth(idx) {
   editIdx = idx;
   const m = appData.months[idx];
   formPrevMonth = getPrev(idx);
+  if (m.exchangeRate && !USD_BRL_RATE) USD_BRL_RATE = m.exchangeRate;
   document.getElementById('modal-month-title').textContent = 'Editar '+MONTHS[m.month]+' '+m.year;
   document.getElementById('f-month').value = m.month;
   document.getElementById('f-year').value = m.year;
@@ -119,6 +121,21 @@ function pickCat(btn) {
   updateTickerVisibility(btn.closest('.form-section'));
 }
 
+function toggleCurrency(btn) {
+  var cur = btn.dataset.cur === 'BRL' ? 'USD' : 'BRL';
+  var label = cur === 'USD' ? 'US$' : 'R$';
+  var entry = btn.closest('.inv-entry');
+  // Sync both toggles (fixed and varcrp wrappers each have one)
+  entry.querySelectorAll('.cur-toggle').forEach(function(b) {
+    b.dataset.cur = cur;
+    b.textContent = label;
+  });
+  // Update price label in varcrp
+  var priceLabel = entry.querySelector('.price-cur-label');
+  if (priceLabel) priceLabel.textContent = 'Preço (' + label + ')';
+  recalcForm();
+}
+
 function updateTickerVisibility(sec) {
   var activeCat = sec.querySelector('.cat-pill.active');
   var catId = activeCat ? activeCat.dataset.cat : '';
@@ -145,7 +162,14 @@ function getVisibleVal(entry) {
 
 function calcBrokerTotal(sec) {
   let sum = 0;
-  sec.querySelectorAll('.inv-entry').forEach(entry => { sum += parseR(getVisibleVal(entry).value); });
+  var activeCat = sec.querySelector('.cat-pill.active');
+  var catId = activeCat ? activeCat.dataset.cat : 'fixed';
+  sec.querySelectorAll('.inv-entry').forEach(entry => {
+    var val = parseR(getVisibleVal(entry).value);
+    var curBtn = entry.querySelector('.cur-toggle');
+    if (curBtn && curBtn.dataset.cur === 'USD' && catId !== 'crypto') val *= (USD_BRL_RATE || 1);
+    sum += val;
+  });
   return sum;
 }
 
@@ -179,12 +203,14 @@ function addInvRow(container, d, prevValue) {
   const qty = d?.quantity ? String(d.quantity).replace('.', ',') : '';
   const unitPrice = (d?.quantity && d?.value) ? fmtI(d.value / d.quantity) : '';
   const priceUsd = d?.priceUsd || '';
+  const currency = d?.currency || 'BRL';
+  const curLabel = currency === 'USD' ? 'US$' : 'R$';
 
   wrapper.innerHTML = `
     <div class="inv-row-fixed">
       <div class="inv-form-row">
         <div class="input-group"><label>Nome</label><input type="text" class="inv-name" value="${d?.name||''}" placeholder="CDB, LCI..."></div>
-        <div class="input-group"><label>Valor (R$)</label><input type="text" class="inv-val" value="${d?fmtI(d.value):''}" placeholder="1.000,49" data-prev="${pv}" oninput="this.classList.remove('invalid');recalcForm()">
+        <div class="input-group"><label>Valor <button type="button" class="cur-toggle" data-cur="${currency}" onclick="toggleCurrency(this)">${curLabel}</button></label><input type="text" class="inv-val" value="${d?fmtI(d.value):''}" placeholder="1.000,49" data-prev="${pv}" oninput="this.classList.remove('invalid');recalcForm()">
           ${pv!==''?`<div class="prev-hint">Anterior: <span class="prev-val">${fmtR(pv)}</span></div>`:''}</div>
         <button class="btn-sm danger" onclick="this.closest('.inv-entry').remove();recalcForm();" style="margin-bottom:0;">&times;</button>
       </div>
@@ -207,17 +233,19 @@ function addInvRow(container, d, prevValue) {
       <div class="inv-form-row inv-row-vc-top">
         <div class="input-group"><label>Nome</label><input type="text" class="inv-name" value="${d?.name||''}" placeholder="A\u00e7\u00e3o, ETF, Coin..."></div>
         <div class="input-group" style="max-width:110px;"><label>Ticker</label><input type="text" class="inv-ticker" value="${ticker}" placeholder="IVVB11" style="padding:7px 10px;font-size:12px;"></div>
-        <div class="input-group"><label>Pre\u00e7o (R$)</label><input type="text" class="inv-price" value="${unitPrice}" placeholder="100,00" ${priceUsd?'data-price-usd="'+priceUsd+'"':''} style="padding:7px 10px;font-size:12px;" oninput="bindPrice(this)"></div>
+        <div class="input-group"><label class="price-cur-label">Pre\u00e7o (${curLabel})</label><input type="text" class="inv-price" value="${unitPrice}" placeholder="100,00" ${priceUsd?'data-price-usd="'+priceUsd+'"':''} style="padding:7px 10px;font-size:12px;" oninput="bindPrice(this)"></div>
         <button class="btn-sm danger" onclick="this.closest('.inv-entry').remove();recalcForm();" style="margin-bottom:0;">&times;</button>
       </div>
       <div class="inv-form-row inv-row-vc-bot">
         <div class="input-group"><label>Quantidade</label><input type="text" class="inv-qty" value="${qty}" placeholder="0,5 / 50" oninput="bindQty(this)"></div>
-        <div class="input-group"><label>Valor (R$)</label><input type="text" class="inv-val" value="${d?fmtI(d.value):''}" placeholder="1.000,49" data-prev="${pv}" oninput="bindVal(this);this.classList.remove('invalid');recalcForm()">
+        <div class="input-group"><label>Valor <button type="button" class="cur-toggle" data-cur="${currency}" onclick="toggleCurrency(this)">${curLabel}</button></label><input type="text" class="inv-val" value="${d?fmtI(d.value):''}" placeholder="1.000,49" data-prev="${pv}" oninput="bindVal(this);this.classList.remove('invalid');recalcForm()">
           ${pv!==''?`<div class="prev-hint">Anterior: <span class="prev-val">${fmtR(pv)}</span></div>`:''}</div>
       </div>
     </div>
   `;
   container.appendChild(wrapper);
+  var sec = wrapper.closest('.form-section');
+  if (sec) updateTickerVisibility(sec);
 }
 
 function bindPrice(el) {
@@ -226,7 +254,7 @@ function bindPrice(el) {
   var qty = parseFloat((qtyInput.value || '').replace(',', '.')) || 0;
   var price = parseR(el.value);
   if (qty && price) {
-    entry.querySelector('.varcrp-val-row .inv-val').value = fmtI(qty * price);
+    entry.querySelector('.inv-row-vc-bot .inv-val').value = fmtI(qty * price);
     recalcForm();
   }
 }
@@ -236,7 +264,7 @@ function bindQty(el) {
   var price = parseR(entry.querySelector('.inv-price').value);
   var qty = parseFloat(el.value.replace(',', '.')) || 0;
   if (qty && price) {
-    entry.querySelector('.varcrp-val-row .inv-val').value = fmtI(qty * price);
+    entry.querySelector('.inv-row-vc-bot .inv-val').value = fmtI(qty * price);
     recalcForm();
   }
 }
@@ -410,17 +438,22 @@ async function saveMonth() {
       const priceInput = wrapper.querySelector('.inv-price');
       const ticker = tickerInput ? tickerInput.value.trim() : '';
       const quantity = qtyInput ? parseFloat(qtyInput.value.replace(',', '.')) || 0 : 0;
+      var curBtn = wrapper.querySelector('.cur-toggle');
+      var invCurrency = curBtn ? curBtn.dataset.cur : 'BRL';
       if (name || value) {
         var inv = { name, value, rate, maturity };
+        if (invCurrency === 'USD') inv.currency = 'USD';
         if (ticker) inv.ticker = ticker;
         if (quantity) inv.quantity = quantity;
         if (priceInput && priceInput.dataset.priceUsd) inv.priceUsd = parseFloat(priceInput.dataset.priceUsd);
         investments.push(inv);
-        bTotal += value;
+        var brlValue = value;
+        if (invCurrency === 'USD' && catId !== 'crypto') brlValue = value * (USD_BRL_RATE || 1);
+        bTotal += brlValue;
       }
     });
     currentTotal += bTotal;
-    categories[catId].push({ name: bName, total: bTotal, investments });
+    categories[catId].push({ name: bName, total: bTotal, investments: investments });
   });
 
   let gain = 0, accGain = 0;
@@ -431,6 +464,7 @@ async function saveMonth() {
   }
 
   const entry = { month, year, date, aporte, gain, accGain, categories };
+  if (USD_BRL_RATE) entry.exchangeRate = USD_BRL_RATE;
 
   if (editIdx >= 0) {
     appData.months[editIdx] = entry;

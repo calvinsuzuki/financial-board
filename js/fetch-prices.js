@@ -26,6 +26,7 @@ async function fetchStockPrices(tickers) {
     var token = prompt('brapi.dev requer um token gratuito para cota\u00e7\u00f5es de a\u00e7\u00f5es.\nCrie em: https://brapi.dev (gr\u00e1tis)\n\nCole seu token:');
     if (!token) throw new Error('Token brapi n\u00e3o informado');
     BRAPI_TOKEN = token.trim();
+    try { localStorage.setItem('brapiToken', BRAPI_TOKEN); } catch(e) {}
   }
   var result = {};
   var gotAuth = false;
@@ -44,7 +45,7 @@ async function fetchStockPrices(tickers) {
     } catch(e) { /* skip failed ticker */ }
   }));
 
-  if (gotAuth) { BRAPI_TOKEN = ''; throw new Error('Token brapi inv\u00e1lido'); }
+  if (gotAuth) { BRAPI_TOKEN = ''; try { localStorage.removeItem('brapiToken'); } catch(e) {} throw new Error('Token brapi inv\u00e1lido'); }
   return result;
 }
 
@@ -90,6 +91,13 @@ async function fetchAllPrices() {
   var uniqueStocks = [...new Set(stockTickers)];
 
   var fetches = [];
+  // Always fetch USD/BRL rate
+  fetches.push(
+    fetch('https://api.binance.com/api/v3/ticker/price?symbol=USDTBRL')
+      .then(function(r) { return r.ok ? r.json() : null; })
+      .then(function(d) { if (d && d.price) USD_BRL_RATE = parseFloat(d.price); })
+      .catch(function() {})
+  );
   if (uniqueCrypto.length) {
     fetches.push(fetchCryptoPrices(uniqueCrypto).then(function(r) { cryptoPrices = r; }).catch(function(e) { errors.push('Crypto: ' + e.message); }));
   }

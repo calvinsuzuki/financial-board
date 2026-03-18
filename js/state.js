@@ -25,8 +25,7 @@ var appData = { months: [] };
       crypto:   [{ name: "Binance", total: 3434.97, investments: [...] }]
     }
   }
-  // currency: "USD" = value stored in USD. Multiplied by exchangeRate to get BRL for totals.
-  // exchangeRate: USD→BRL rate at save time. Used to convert USD investments.
+  // currency: "USD" = investment entered in USD, but value is always stored as BRL (qty × câmbio).
   // Fixed investments with rate "Variável" count toward Renda Variável in distribution.
 */
 var selMonth = 0;

@@ -205,31 +205,26 @@ function renderDetail() {
           <span class="broker-total">${fmtR(b.total)}</span>
         </div>`;
 
-      var xRate = cur.exchangeRate || 1;
       (b.investments||[]).forEach(inv => {
         if(!inv.name&&!inv.value) return;
-        var isUsd = inv.currency === 'USD' && cat.id !== 'crypto';
-        var brlVal = isUsd ? inv.value * xRate : inv.value;
         const pi = findPrevInv(prev, cat.id, b.name, inv.name);
-        var prevRate = prev && prev.exchangeRate ? prev.exchangeRate : 1;
-        var piBrl = pi ? (pi.currency === 'USD' && cat.id !== 'crypto' ? pi.value * prevRate : pi.value) : 0;
-        const invGain = pi ? brlVal - piBrl : 0;
-        const invPct = pi && piBrl > 0 ? (invGain / piBrl * 100) : 0;
+        const invGain = pi ? inv.value - pi.value : 0;
+        const invPct = pi && pi.value > 0 ? (invGain / pi.value * 100) : 0;
         const invAnn = (pi && days > 0) ? annualize(invPct, days) : 0;
 
         var unitPriceStr = '';
         if (inv.ticker && inv.quantity) {
-          unitPriceStr = inv.quantity+' \u00d7 '+(inv.currency==='USD'&&inv.priceUsd?fmtUsd(inv.priceUsd):fmtR(brlVal/inv.quantity))+'/un';
+          unitPriceStr = inv.quantity+' \u00d7 '+(inv.currency==='USD'&&inv.priceUsd?fmtUsd(inv.priceUsd):fmtR(inv.value/inv.quantity))+'/un';
         }
-        var usdHint = isUsd ? ' <span style="font-size:10px;color:var(--green);">'+fmtUsd(inv.value)+'</span>' : '';
+        var usdBadge = inv.currency==='USD' ? '<span style="font-size:10px;color:var(--green);margin-left:4px;">USD</span>' : '';
 
         html += `<div class="investment-row">
           <div>
-            <div class="inv-name">${inv.name}${inv.currency==='USD'?'<span style="font-size:10px;color:var(--green);margin-left:4px;">USD</span>':''}${pi?`<span class="gain-badge ${invGain>=0?'pos':'neg'}">${fmtPct(invPct)}</span>`:''}</div>
+            <div class="inv-name">${inv.name}${usdBadge}${pi?`<span class="gain-badge ${invGain>=0?'pos':'neg'}">${fmtPct(invPct)}</span>`:''}</div>
             <div class="inv-details">${unitPriceStr} ${inv.rate?'| '+inv.rate:''}${inv.maturity?' | Venc: '+inv.maturity:''}</div>
           </div>
           <div>
-            <div class="inv-value">${fmtR(brlVal)}${usdHint}</div>
+            <div class="inv-value">${fmtR(inv.value)}</div>
             ${pi?`<div class="inv-gain"><span class="pct ${invGain>=0?'positive':'negative'}">${invGain>=0?'+':''}${fmtR(invGain)}</span>${days>0?`<div class="ann">${fmtPct(invAnn)} a.a.</div>`:''}</div>`:''}
           </div>
         </div>`;

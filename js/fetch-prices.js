@@ -81,7 +81,10 @@ async function fetchAllPrices() {
     });
   });
 
-  if (!entries.length) return { updated: 0, errors: [] };
+  var usdWraps = document.querySelectorAll('#brokers-all .inv-usd-wrap');
+  var hasUsdFixed = false;
+  usdWraps.forEach(function(w) { if (w.style.display !== 'none') hasUsdFixed = true; });
+  if (!entries.length && !hasUsdFixed) return { updated: 0, errors: [] };
 
   var cryptoPrices = {};
   var stockPrices = {};
@@ -137,6 +140,22 @@ async function fetchAllPrices() {
       notFound.push(e.ticker);
     }
   });
+
+  // Update câmbio fields in USD fixed entries
+  if (USD_BRL_RATE) {
+    document.querySelectorAll('#brokers-all .inv-usd-wrap').forEach(function(wrap) {
+      if (wrap.style.display === 'none') return;
+      var cambioInput = wrap.querySelector('.inv-cambio');
+      cambioInput.value = fmtI(USD_BRL_RATE);
+      var usdAmt = parseR(wrap.querySelector('.inv-usd-amt').value);
+      if (usdAmt) {
+        wrap.querySelector('.inv-val').value = fmtI(USD_BRL_RATE * usdAmt);
+      }
+      cambioInput.style.background = 'rgba(0,184,148,0.15)';
+      setTimeout(function() { cambioInput.style.background = ''; }, 1500);
+      updated++;
+    });
+  }
 
   return { updated: updated, errors: errors, notFound: notFound };
 }
